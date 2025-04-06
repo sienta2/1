@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>管理者ページ</title>
+  <style>
+    /* スタイルの追加 */
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #f9f9f9;
+      color: #333;
+      padding: 30px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    h1 {
+      text-align: center;
+      color: #4CAF50;
+    }
+    input[type="password"] {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      padding: 12px 18px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      width: 100%;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    .admin-container {
+      display: none;
+      padding: 20px;
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    .admin-settings {
+      margin-top: 20px;
+      padding: 10px;
+      background-color: #f2f2f2;
+      border-radius: 8px;
+    }
+    .toggle-button {
+      padding: 10px;
+      background-color: #f44336;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      width: 100%;
+      margin-bottom: 10px;
+    }
+    .toggle-button.on {
+      background-color: #4CAF50;
+    }
+  </style>
+</head>
+<body>
+  <h1>管理者ページ</h1>
+  <form id="loginForm">
+    <label for="password">パスワード</label>
+    <input type="password" id="password" placeholder="パスワードを入力" required>
+    <button type="submit">ログイン</button>
+  </form>
+
+  <div class="admin-container" id="adminPanel">
+    <h2>問題の追加</h2>
+    <textarea id="questionInput" placeholder="問題を入力"></textarea>
+    <textarea id="answerInput" placeholder="答えを入力"></textarea>
+    <button onclick="addQuestion()">問題を追加</button>
+    <button onclick="redirectToQuiz()">問題ページへ</button>
+
+    <!-- 管理者設定 -->
+    <div class="admin-settings">
+      <h3>管理者設定</h3>
+      <button class="toggle-button" id="maintenanceMode" onclick="toggleMaintenanceMode()">メンテナンスモード: オフ</button>
+      <h4>問題削除</h4>
+      <select id="deleteQuestionSelect">
+        <option value="">問題を選択</option>
+      </select>
+      <button onclick="deleteQuestion()">問題を削除</button>
+    </div>
+  </div>
+
+  <script>
+    const correctPassword = 'sienta2';
+    const maintenanceModeButton = document.getElementById('maintenanceMode');
+    const deleteQuestionSelect = document.getElementById('deleteQuestionSelect');
+
+    // ログイン処理
+    document.getElementById('loginForm').addEventListener('submit', function(event) {
+      event.preventDefault();
+      const password = document.getElementById('password').value;
+      if (password === correctPassword) {
+        document.getElementById('adminPanel').style.display = 'block';
+        document.getElementById('loginForm').style.display = 'none';
+        loadQuestions();
+      } else {
+        alert('パスワードが間違っています');
+      }
+    });
+
+    // メンテナンスモードの切り替え
+    function toggleMaintenanceMode() {
+      const isOn = maintenanceModeButton.classList.contains('on');
+      maintenanceModeButton.classList.toggle('on');
+      maintenanceModeButton.textContent = `メンテナンスモード: ${isOn ? 'オフ' : 'オン'}`;
+      localStorage.setItem('maintenanceMode', !isOn);
+    }
+
+    // 問題の削除
+    function loadQuestions() {
+      let questions = JSON.parse(localStorage.getItem('questions')) || [];
+      deleteQuestionSelect.innerHTML = '<option value="">問題を選択</option>';
+      questions.forEach((question, index) => {
+        const option = document.createElement('option');
+        option.value = index;
+        option.textContent = `問題 ${index + 1}`;
+        deleteQuestionSelect.appendChild(option);
+      });
+    }
+
+    function deleteQuestion() {
+      const selectedIndex = deleteQuestionSelect.value;
+      if (selectedIndex !== '') {
+        let questions = JSON.parse(localStorage.getItem('questions')) || [];
+        questions.splice(selectedIndex, 1);
+        localStorage.setItem('questions', JSON.stringify(questions));
+        loadQuestions();
+        alert('問題が削除されました');
+      } else {
+        alert('削除する問題を選んでください');
+      }
+    }
+
+    // 問題ページへ遷移
+    function redirectToQuiz() {
+      window.location.href = 'quiz.html';
+    }
+  </script>
+</body>
+</html>
