@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>問題登録：ザ・ファイナル</title>
+  <style>
+    body {
+      font-family: 'Courier New', monospace;
+      background-color: #222;
+      color: #fff;
+      padding: 40px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      text-align: center;
+      color: #00FFAA;
+      border-bottom: 2px solid #00FFAA;
+      padding-bottom: 10px;
+      margin-bottom: 30px;
+    }
+
+    label {
+      display: block;
+      margin-top: 15px;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      background-color: #111;
+      color: #fff;
+      border: 1px solid #555;
+      border-radius: 5px;
+    }
+
+    button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      background-color: #00FFAA;
+      color: #000;
+      font-weight: bold;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #00cc88;
+    }
+
+    .small-btn {
+      margin-left: 10px;
+      padding: 5px 10px;
+      font-size: 12px;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+    }
+
+    .delete-btn { background-color: #ff4444; color: white; }
+    .edit-btn { background-color: #ffaa00; color: black; }
+    .export-btn { background-color: #8888ff; color: white; }
+
+    .question-item {
+      margin-bottom: 15px;
+      padding: 10px;
+      border: 1px solid #555;
+      background-color: #333;
+      border-radius: 5px;
+    }
+
+    img.question-image {
+      margin-top: 5px;
+      max-width: 100%;
+      height: auto;
+      border-radius: 4px;
+    }
+
+    #countDisplay {
+      margin-top: 10px;
+      font-size: 16px;
+      text-align: right;
+      color: #ccc;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>📄 問題登録（ザ・ファイナル）</h1>
+
+  <label>問題文:</label>
+  <input type="text" id="question" placeholder="例: この画像はどこ？">
+
+  <label>正解:</label>
+  <input type="text" id="answer" placeholder="例: 東京タワー">
+
+  <label>画像URL（任意）:</label>
+  <input type="text" id="imageUrl" placeholder="例: https://example.com/image.jpg">
+
+  <button onclick="addQuestion()">＋ 登録</button>
+  <button class="export-btn small-btn" onclick="exportCSV()">📤 CSVエクスポート</button>
+
+  <div id="countDisplay"></div>
+  <div id="questionsList"></div>
+
+  <script>
+    const questionInput = document.getElementById('question');
+    const answerInput = document.getElementById('answer');
+    const imageUrlInput = document.getElementById('imageUrl');
+    const list = document.getElementById('questionsList');
+    const countDisplay = document.getElementById('countDisplay');
+
+    function loadQuestions() {
+      const data = JSON.parse(localStorage.getItem('questions')) || [];
+      list.innerHTML = '<h3>📚 登録済みの問題:</h3>';
+      countDisplay.innerText = `全 ${data.length} 問`;
+
+      data.forEach((q, i) => {
+        const div = document.createElement('div');
+        div.className = "question-item";
+        div.innerHTML = `
+          問 ${i + 1}: ${q.text}（答え: ${q.answer}）
+          ${q.image ? `<br><img class="question-image" src="${q.image}" alt="画像">` : ''}
+          <br>
+          <button class="small-btn delete-btn" onclick="deleteQuestion(${i})">🗑 削除</button>
+          <button class="small-btn edit-btn" onclick="editQuestion(${i})">✏️ 編集</button>
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    function addQuestion() {
+      const text = questionInput.value.trim();
+      const answer = answerInput.value.trim();
+      const image = imageUrlInput.value.trim();
+
+      if (!text || !answer) {
+        alert("⚠ 問題文と答えを入力してください。");
+        return;
+      }
+
+      const questions = JSON.parse(localStorage.getItem('questions')) || [];
+      questions.push({ text, answer, image });
+      localStorage.setItem('questions', JSON.stringify(questions));
+
+      questionInput.value = '';
+      answerInput.value = '';
+      imageUrlInput.value = '';
+      loadQuestions();
+    }
+
+    function deleteQuestion(index) {
+      const questions = JSON.parse(localStorage.getItem('questions')) || [];
+      if (confirm(`「${questions[index].text}」を削除しますか？`)) {
+        questions.splice(index, 1);
+        localStorage.setItem('questions', JSON.stringify(questions));
+        loadQuestions();
+      }
+    }
+
+    function editQuestion(index) {
+      const questions = JSON.parse(localStorage.getItem('questions')) || [];
+      const q = questions[index];
+      const newText = prompt("新しい問題文を入力:", q.text);
+      if (newText === null) return;
+      const newAnswer = prompt("新しい答えを入力:", q.answer);
+      if (newAnswer === null) return;
+      const newImage = prompt("画像URLを変更（空欄で削除）:", q.image || "");
+
+      questions[index] = {
+        text: newText.trim(),
+        answer: newAnswer.trim(),
+        image: newImage.trim()
+      };
+      localStorage.setItem('questions', JSON.stringify(questions));
+      loadQuestions();
+    }
+
+    function exportCSV() {
+      const questions = JSON.parse(localStorage.getItem('questions')) || [];
+      if (questions.length === 0) {
+        alert("📭 エクスポートするデータがありません。");
+        return;
+      }
+
+      const csvContent = "data:text/csv;charset=utf-8," +
+        "問題文,答え\n" +
+        questions.map(q => `"${q.text.replace(/"/g, '""')}","${q.answer.replace(/"/g, '""')}"`).join("\n");
+
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", "questions.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // 初期読み込み
+    loadQuestions();
+  </script>
+
+</body>
+</html>
